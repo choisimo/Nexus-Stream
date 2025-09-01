@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Core Colors - Professional B2B Palette */
+    --background: 0 0% 99%;
+    --foreground: 224 16% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 16% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 16% 15%;
+
+    /* Brand Colors - Knowledge & Innovation */
+    --primary: 224 76% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 224 76% 58%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 16% 15%;
+
+    --muted: 220 13% 95%;
+    --muted-foreground: 224 9% 45%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* UI Elements */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 76% 48%;
+
+    /* Custom Knowledge Hub Colors */
+    --knowledge: 224 76% 48%;
+    --knowledge-foreground: 0 0% 100%;
+    --experience: 142 76% 36%;
+    --experience-foreground: 0 0% 100%;
+    --insight: 45 93% 47%;
+    --insight-foreground: 0 0% 100%;
+    --collaboration: 284 76% 48%;
+    --collaboration-foreground: 0 0% 100%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(224 76% 48%), hsl(224 76% 58%));
+    --gradient-hero: linear-gradient(135deg, hsl(224 76% 48%) 0%, hsl(284 76% 48%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 14% 99%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(224 76% 48% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(224 76% 48% / 0.1), 0 2px 4px -1px hsl(224 76% 48% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(224 76% 48% / 0.1), 0 4px 6px -2px hsl(224 76% 48% / 0.05);
+    --shadow-glow: 0 0 20px hsl(224 76% 48% / 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 224 16% 8%;
+    --foreground: 220 14% 96%;
+
+    --card: 224 16% 10%;
+    --card-foreground: 220 14% 96%;
+
+    --popover: 224 16% 10%;
+    --popover-foreground: 220 14% 96%;
+
+    --primary: 224 76% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 224 76% 68%;
+
+    --secondary: 224 12% 15%;
+    --secondary-foreground: 220 14% 96%;
+
+    --muted: 224 12% 12%;
+    --muted-foreground: 224 9% 55%;
+
+    --accent: 142 76% 46%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 224 12% 18%;
+    --input: 224 12% 18%;
+    --ring: 224 76% 58%;
+
+    /* Dark Mode Knowledge Hub Colors */
+    --knowledge: 224 76% 58%;
+    --knowledge-foreground: 0 0% 100%;
+    --experience: 142 76% 46%;
+    --experience-foreground: 0 0% 100%;
+    --insight: 45 93% 57%;
+    --insight-foreground: 0 0% 100%;
+    --collaboration: 284 76% 58%;
+    --collaboration-foreground: 0 0% 100%;
+
+    /* Dark Mode Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(224 76% 58%), hsl(224 76% 68%));
+    --gradient-hero: linear-gradient(135deg, hsl(224 76% 58%) 0%, hsl(284 76% 58%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(224 16% 10%) 0%, hsl(224 12% 12%) 100%);
+    
+    /* Dark Mode Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(224 76% 58% / 0.15);
+    --shadow-md: 0 4px 6px -1px hsl(224 76% 58% / 0.2), 0 2px 4px -1px hsl(224 76% 58% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(224 76% 58% / 0.2), 0 4px 6px -2px hsl(224 76% 58% / 0.1);
+    --shadow-glow: 0 0 30px hsl(224 76% 58% / 0.4);
+
+    --sidebar-background: 224 16% 6%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 224 76% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 12% 12%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 224 12% 18%;
+    --sidebar-ring: 224 76% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
