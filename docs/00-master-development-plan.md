@@ -4,6 +4,13 @@
 
 Corporate Nexus Stream은 조직의 암묵지를 형식지로 변환하고 AI 기반 인사이트를 제공하는 차세대 기업용 지식 관리 및 협업 플랫폼입니다.
 
+> **진행 현황 스냅샷 (2025-09-26)**
+> - Backend MVP: NestJS 기반 Auth & Knowledge Base 서비스 API 가동 (JWT, Prisma, PostgreSQL)
+> - Database: User/Profile/Document/Version/Tag 스키마 마이그레이션 완료 (`prisma/migrations/20250925152251_init`)
+> - Infrastructure: Docker Compose(PostgreSQL) 및 `.env` 기반 환경 구성 완료
+> - Frontend: 인증 서비스 연동을 위한 `src/services/auth/authService.ts` 업데이트, Knowledge Base UI 통합 준비 중
+> - 전체 진행률: **15% (Foundation 단계 진행 중)**
+
 ## 서비스 아키텍처
 
 ### 8개 핵심 서비스

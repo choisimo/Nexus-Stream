@@ -1,27 +1,49 @@
-# Knowledge Base Service Development Plan
+# Knowledge Base Service
 
 ## 개요
-Corporate Nexus Stream의 핵심 지식 저장소 서비스로, 조직의 모든 지식을 중앙화하여 관리하고 AI 기반 연결을 통해 지식의 가치를 극대화합니다.
+Corporate Nexus Stream의 핵심 지식 저장소 서비스입니다. 2025-09-26 기준으로 **NestJS Documents 모듈**과 **Prisma** 기반의 실제 문서 CRUD, 버전 관리, 태그 시스템이 구현되었으며, 향후 에디터, 검색, 협업 기능을 순차적으로 확장할 예정입니다.
 
-## 주요 기능
+## 현재 구현 상태 (2025-09-26)
+- ✅ `POST /documents` 문서 생성 (JWT 인증 필요)
+- ✅ `GET /documents` 페이지네이션 목록 조회 (필터: 타입, 발행 여부)
+- ✅ `GET /documents/:id` 단일 문서 조회 + 조회수 증가
+- ✅ `PATCH /documents/:id` 문서 수정 (버전 기록 자동 생성)
+- ✅ `DELETE /documents/:id` 문서 삭제 (작성자 본인만)
+- ✅ `GET /documents/search?q=` 태그/제목/본문 기반 부분 검색
+- ✅ `GET /documents/:id/versions` 최근 버전 히스토리 조회
+- ✅ `GET /documents/category/:categoryId` 카테고리별 문서 목록
+- ✅ Prisma 모델: `Document`, `DocumentVersion`, `Category`, `Tag`, `Comment`
+- ⚠️ 파일 첨부, 고급 검색(Elasticsearch), 권한/공유 설정은 **미구현**
 
-### 1. 지식 아티클 관리
-- **생성/수정/삭제**: 구조화된 지식 문서 작성 및 관리
-- **버전 관리**: 변경 이력 추적 및 이전 버전 복원
-- **카테고리 분류**: 태그 기반 분류 시스템
-- **템플릿 시스템**: 일관된 문서 구조를 위한 템플릿 제공
+## 주요 기능 로드맵
 
-### 2. 컨텐츠 관리
-- **Rich Text Editor**: 마크다운 기반 고급 에디터
-- **미디어 첨부**: 이미지, 비디오, 문서 첨부 기능
-- **링크 관리**: 내부/외부 참조 링크 관리
-- **메타데이터**: 작성자, 수정일, 접근 권한 등
+### 1. 지식 문서 관리
+- ✅ 생성/수정/삭제 API 구현 (`documents.service.ts`)
+- ✅ 버전 관리 (변경 시 `DocumentVersion` 기록)
+- ✅ 카테고리 및 태그 관계 설정 (Prisma `connectOrCreate`)
+- ☐ 문서 템플릿 시스템
+- ☐ 문서 승인/게시 워크플로우
+- ☐ 라이프사이클 관리 (보존/아카이브)
+
+### 2. 콘텐츠 및 편집 경험
+- ✅ 기본 텍스트 컨텐츠 저장 (Markdown/HTML 문자열)
+- ☐ Rich Text Editor (Tiptap/Monaco) 연동
+- ☐ 이미지/파일 첨부 (S3/MinIO)
+- ☐ 문서 내 링크/메타데이터 자동 추출
+- ☐ 공동 편집 (실시간 협업) 기능
 
 ### 3. 검색 및 탐색
-- **전문 검색**: Elasticsearch 기반 고급 검색
-- **필터링**: 카테고리, 날짜, 작성자별 필터
-- **연관 문서**: AI 기반 관련 문서 추천
-- **북마크**: 개인/팀 북마크 시스템
+- ✅ 단순 텍스트/태그 검색 (`findMany` + `contains`)
+- ☐ Elasticsearch 연동 및 스코어링
+- ☐ 필터/정렬 UX (카테고리, 작성자, 태그, 날짜)
+- ☐ 추천/연관 문서 (AI Insights 연계)
+- ☐ 즐겨찾기/북마크 시스템
+
+### 4. 권한 및 보안
+- ✅ JWT 기반 인증 + 작성자 검증
+- ☐ 문서 권한(공개/비공개/팀 공유) 모델
+- ☐ 감사 로그 및 액세스 이력
+- ☐ 콘텐츠 승인 워크플로우 및 감사 단계
 
 ## 기술 스택
 
@@ -32,12 +54,19 @@ Corporate Nexus Stream의 핵심 지식 저장소 서비스로, 조직의 모든
 - **Editor**: Monaco Editor 또는 Tiptap
 - **Styling**: Tailwind CSS
 
-### Backend
-- **API Framework**: Node.js + Express 또는 Fastify
-- **Database**: PostgreSQL (메인) + Redis (캐시)
-- **Search Engine**: Elasticsearch
-- **File Storage**: MinIO 또는 AWS S3
-- **Authentication**: JWT + OAuth 2.0
+### Backend (현행)
+- **Framework**: NestJS 10 (Express Adapter)
+- **Modules**: `DocumentsModule`, `AuthModule`, `PrismaModule`
+- **Database**: PostgreSQL 15 (Docker Compose)
+- **ORM**: Prisma Client (Generated @ `backend/generated/prisma`)
+- **Authentication**: JWT (Access Token)
+- **Validation**: `class-validator`
+
+### Backend (계획)
+- Redis 기반 캐싱/세션
+- Elasticsearch 검색 인덱스
+- MinIO/S3 파일 저장 연동
+- WebSocket 기반 협업 (Socket.IO)
 
 ### 인프라
 - **Container**: Docker + Docker Compose
@@ -47,189 +76,151 @@ Corporate Nexus Stream의 핵심 지식 저장소 서비스로, 조직의 모든
 
 ## 데이터 모델
 
-### Article Entity
-```sql
-CREATE TABLE articles (
-    id UUID PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    slug VARCHAR(255) UNIQUE,
-    category_id UUID REFERENCES categories(id),
-    author_id UUID REFERENCES users(id),
-    status VARCHAR(20) DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    published_at TIMESTAMP,
-    view_count INTEGER DEFAULT 0,
-    like_count INTEGER DEFAULT 0
-);
-```
+### Prisma 모델 발췌
+```prisma
+model Document {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  type        DocumentType
+  authorId    String
+  categoryId  String?
+  isPublished Boolean   @default(false)
+  version     Int       @default(1)
+  viewCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation(fields: [authorId], references: [id])
+  category    Category? @relation(fields: [categoryId], references: [id])
+  tags        Tag[]
+  comments    Comment[]
+  versions    DocumentVersion[]
+}
 
-### Category Entity
-```sql
-CREATE TABLE categories (
-    id UUID PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    parent_id UUID REFERENCES categories(id),
-    color VARCHAR(7),
-    icon VARCHAR(50),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
+model DocumentVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  content    String
+  version    Int
+  changelog  String?
+  createdAt  DateTime @default(now())
+  createdBy  String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
 
-### Tag Entity
-```sql
-CREATE TABLE tags (
-    id UUID PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL,
-    color VARCHAR(7),
-    usage_count INTEGER DEFAULT 0
-);
+model Category {
+  id         String     @id @default(uuid())
+  name       String     @unique
+  parentId   String?
+  documents  Document[]
+  children   Category[] @relation("CategoryTree")
+  parent     Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+}
 
-CREATE TABLE article_tags (
-    article_id UUID REFERENCES articles(id),
-    tag_id UUID REFERENCES tags(id),
-    PRIMARY KEY (article_id, tag_id)
-);
+model Tag {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  documents Document[]
+}
 ```
 
 ## API 설계
 
-### Article Management
-```typescript
-// GET /api/articles - 목록 조회
-interface GetArticlesResponse {
-  articles: Article[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  filters: {
-    category?: string;
-    tags?: string[];
-    author?: string;
-    status?: string;
-  };
-}
-
-// POST /api/articles - 새 아티클 생성
-interface CreateArticleRequest {
-  title: string;
-  content: string;
-  categoryId?: string;
-  tags?: string[];
-  status?: 'draft' | 'published';
-}
-
-// PUT /api/articles/:id - 아티클 수정
-interface UpdateArticleRequest {
-  title?: string;
-  content?: string;
-  categoryId?: string;
-  tags?: string[];
-  status?: 'draft' | 'published';
-}
-
-// GET /api/articles/:id - 단일 아티클 조회
-interface GetArticleResponse {
-  article: Article;
-  relatedArticles: Article[];
-  comments: Comment[];
-}
+### REST API (NestJS `DocumentsController`)
+```http
+POST   /documents                    # 문서 생성 (JWT 필요)
+GET    /documents?page=&limit=&type= # 목록 조회
+GET    /documents/search?q=          # 간단 검색
+GET    /documents/:id                # 단일 문서 + 댓글/버전 일부
+GET    /documents/:id/versions       # 버전 히스토리 (최근 5개)
+GET    /documents/category/:id       # 카테고리별 문서 리스트
+PATCH  /documents/:id                # 문서 수정 (작성자만)
+DELETE /documents/:id                # 문서 삭제 (작성자만)
 ```
 
-### Search API
-```typescript
-// GET /api/search - 검색
-interface SearchRequest {
-  q: string;
-  filters?: {
-    category?: string;
-    tags?: string[];
-    author?: string;
-    dateRange?: {
-      from: string;
-      to: string;
-    };
-  };
-  sort?: 'relevance' | 'date' | 'popularity';
-  page?: number;
-  limit?: number;
-}
-
-interface SearchResponse {
-  results: SearchResult[];
-  suggestions: string[];
-  facets: {
-    categories: FacetItem[];
-    tags: FacetItem[];
-    authors: FacetItem[];
-  };
-  pagination: Pagination;
+### 응답 페이로드 예시
+```jsonc
+{
+  "data": [
+    {
+      "id": "...",
+      "title": "Getting Started with Nexus Stream",
+      "type": "GUIDE",
+      "isPublished": true,
+      "viewCount": 12,
+      "tags": [ { "id": "...", "name": "getting-started" } ],
+      "author": {
+        "id": "...",
+        "name": "Admin User",
+        "email": "admin@nexus-stream.com"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 1,
+    "totalPages": 1
+  }
 }
 ```
 
 ## 구현 단계
 
-### Phase 1: 기본 CRUD (4주)
-- [ ] 기본 Article 모델 및 API 구현
-- [ ] 간단한 텍스트 에디터 통합
-- [ ] 카테고리 관리 시스템
-- [ ] 기본 목록/상세 페이지
+### Phase 1: Backend MVP (완료)
+- [x] Prisma 스키마 설계 (Document, Category, Tag, Version, Comment)
+- [x] NestJS DocumentsModule + Service + Controller 구현
+- [x] JWT 인증 연동 및 작성자 권한 체크
+- [x] 기본 검색/필터/페이지네이션
 
-### Phase 2: 고급 기능 (6주)
-- [ ] Rich Text Editor 통합 (Monaco/Tiptap)
-- [ ] 파일 첨부 및 이미지 업로드
-- [ ] 태그 시스템 구현
-- [ ] 버전 관리 시스템
-- [ ] 댓글 및 피드백 시스템
+### Phase 2: 프론트엔드 통합 (진행 예정)
+- [ ] 문서 리스트/상세 페이지 (React + TanStack Query)
+- [ ] 문서 작성/편집 UI (Tiptap)
+- [ ] 태그/카테고리 선택 UX
+- [ ] 문서 히스토리/비교 UI
 
-### Phase 3: 검색 및 AI (8주)
-- [ ] Elasticsearch 통합
-- [ ] 고급 검색 기능
-- [ ] AI 기반 관련 문서 추천
-- [ ] 자동 태깅 시스템
-- [ ] 콘텐츠 분석 및 인사이트
+### Phase 3: 검색 & 협업 (예정)
+- [ ] Elasticsearch 통합 및 인덱싱 파이프라인
+- [ ] 고급 필터/정렬 기능
+- [ ] 문서 즐겨찾기, 추천 시스템
+- [ ] 실시간 편집/댓글/알림 (Team Collaboration 연계)
 
-### Phase 4: 최적화 및 확장 (4주)
-- [ ] 성능 최적화
-- [ ] 캐싱 시스템
-- [ ] 모바일 최적화
-- [ ] 접근성 개선
-- [ ] 국제화 (i18n)
+### Phase 4: 운영 및 품질 (예정)
+- [ ] 캐싱 전략 (Redis)
+- [ ] 권한/공유 정책 고도화
+- [ ] 백업/아카이브 전략
+- [ ] 접근성(i18n, a11y) 및 모바일 대응
 
-## 성능 요구사항
-- **응답 시간**: 페이지 로드 < 2초
-- **검색 속도**: 검색 결과 < 500ms
-- **동시 사용자**: 1,000명 동시 접속 지원
-- **가용성**: 99.9% 업타임
+## 성능 요구사항 (초기 가이드)
+- **API 응답 시간**: < 500ms (p95, 로컬 기준)
+- **검색 속도**: 기본 Prisma 검색 < 500ms / Elasticsearch 도입 후 < 200ms (p95)
+- **동시 사용자**: Pre-MVP 100명, GA 목표 1,000명 동시 접속
+- **가용성**: 개발 단계 95%, GA 이후 99.9%
 
 ## 보안 요구사항
-- **권한 관리**: 역할 기반 접근 제어 (RBAC)
-- **데이터 암호화**: 전송 중/저장 중 암호화
-- **감사 로그**: 모든 변경 사항 로깅
-- **백업**: 일일 자동 백업 및 복원 테스트
+- **인증**: JWT Access Token (Refresh Token 도입 예정)
+- **권한**: 작성자/관리자 기반 접근 제어 (RBAC 확장 예정)
+- **데이터 암호화**: 전송 중 TLS, 저장 시 DB 암호화 옵션 검토
+- **감사 로그**: Prisma Middleware 기반 변경 이력 로깅 (예정)
+- **백업**: PostgreSQL WAL/스냅샷 백업 전략 수립 (예정)
 
 ## 테스트 전략
-- **Unit Tests**: 90% 이상 코드 커버리지
-- **Integration Tests**: API 엔드포인트 테스트
-- **E2E Tests**: 주요 사용자 플로우
-- **Performance Tests**: 부하 테스트 및 성능 벤치마크
+- **Unit Tests**: `DocumentsService` 메서드 단위 검증 (Mock Prisma)
+- **Integration Tests**: Supertest 기반 REST API 시나리오
+- **E2E Tests**: Auth + Documents 플로우 (등록 → 문서 생성 → 조회 → 수정)
+- **Performance Tests**: Prisma Query 성능 측정, Elasticsearch 도입 시 재평가
 
 ## 모니터링 및 로깅
-- **메트릭**: 사용자 활동, 성능, 에러율
-- **알림**: 시스템 장애 및 성능 이슈 알림
-- **로그 수집**: 구조화된 로그 수집 및 분석
-- **대시보드**: 실시간 모니터링 대시보드
+- **현재**: Nest Logger + Console 출력 (개발용)
+- **예정**: Winston + ELK Stack, OpenTelemetry Metrics
+- **알림**: PagerDuty/Slack 연동 계획
+- **대시보드**: Grafana 대시보드 템플릿 설계 예정
 
 ## 배포 및 운영
-- **환경**: Development → Staging → Production
-- **CI/CD**: 자동 빌드, 테스트, 배포
-- **롤링 업데이트**: 무중단 배포
-- **롤백**: 자동 롤백 시스템
+- **환경**: Development (로컬 Docker) → Staging/Production (Kubernetes 예정)
+- **CI/CD**: GitHub Actions + ArgoCD 파이프라인 설계 예정
+- **배포 전략**: Rolling Update + Blue/Green (장기 목표)
+- **롤백**: Prisma Migrate Rollback, Docker 이미지 핫픽스 절차 마련 예정
 
 ## 참고 자료
 - [시장 조사 보고서](./research/knowledge-base-market-analysis.md)

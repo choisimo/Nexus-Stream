@@ -1,74 +1,179 @@
-# User Management & Authentication Service Development Plan
+# User Management & Authentication Service
 
 ## 개요
-Corporate Nexus Stream의 사용자 관리, 인증, 권한 부여를 담당하는 핵심 보안 서비스입니다. 조직의 구조와 역할에 맞는 세밀한 권한 관리와 안전한 인증 시스템을 제공합니다.
+Corporate Nexus Stream의 사용자 관리와 인증을 담당하는 핵심 보안 서비스입니다. 2025-09-26 기준으로 **NestJS + Prisma** 기반의 기본 로그인/회원가입 플로우가 구현되었으며, 향후 RBAC 및 고급 보안 기능을 단계적으로 확장할 예정입니다.
 
-## 주요 기능
+## 현재 구현 상태 (2025-09-26)
+- ✅ 이메일/비밀번호 기반 회원가입 및 로그인 (JWT Access Token 발급)
+- ✅ 비밀번호 해싱(bcrypt) 및 활성 계정 검증
+- ✅ 사용자 프로필 자동 생성 (부서, 직무 필드 포함)
+- ✅ `GET /auth/me` 인증 사용자 조회
+- ✅ Prisma 기반 PostgreSQL 스키마(User, Profile 등) 마이그레이션 적용
+- ⚠️ Refresh Token, MFA, RBAC, OAuth, 감사 로그는 **미구현** (로드맵 예정)
+
+## 주요 기능 로드맵
 
 ### 1. 사용자 관리
-- **사용자 등록/프로파일**: 사용자 계정 생성 및 프로파일 관리
-- **조직 구조**: 부서, 팀, 역할 기반 조직 구조 관리
-- **사용자 디렉토리**: 통합 사용자 디렉토리 및 검색
-- **프로필 커스터마이징**: 개인 프로필, 스킬, 관심사 설정
-- **사용자 상태 관리**: 활성/비활성, 휴가/부재 상태 관리
+- ✅ 사용자 등록 및 프로필 기본 정보 저장
+- ✅ 사용자 활성/비활성 상태 관리 (`User.active`)
+- ☐ 사용자 디렉토리/검색 API
+- ☐ 조직도(부서/팀) 및 역할 관리 UI
+- ☐ 사용자 상태(휴가/부재 등) 세분화
 
 ### 2. 인증 시스템
-- **다중 인증 방식**: 이메일/패스워드, SSO, 소셜 로그인
-- **다중 인증 (MFA)**: TOTP, SMS, 이메일 기반 2차 인증
-- **세션 관리**: 안전한 세션 관리 및 자동 만료
-- **디바이스 관리**: 로그인 디바이스 추적 및 관리
-- **보안 이벤트**: 의심스러운 로그인 시도 감지 및 알림
+- ✅ JWT Access Token 발급 및 검증 (`JwtStrategy`)
+- ✅ `JwtAuthGuard`를 통한 라우트 보호 (`/auth/me`, `/documents` 등)
+- ☐ Refresh Token 및 세션 관리
+- ☐ MFA (TOTP/SMS/Email)
+- ☐ OAuth2 / SSO 통합 (Google, Azure AD 등)
+- ☐ 로그인 디바이스 추적 및 보안 이벤트 모니터링
 
 ### 3. 권한 관리 (RBAC)
-- **역할 기반 접근**: 세밀한 역할 정의 및 권한 매핑
-- **동적 권한**: 컨텍스트 기반 동적 권한 부여
-- **프로젝트별 권한**: 프로젝트/팀별 특별 권한
-- **승인 워크플로우**: 권한 변경 승인 프로세스
-- **권한 감사**: 권한 부여 및 사용 기록 추적
+- ✅ 사용자 `role` 필드 (기본값 `USER`) 저장
+- ☐ 역할/권한 테이블 및 관리자 UI
+- ☐ 컨텍스트 기반 권한 (조직/프로젝트 단위)
+- ☐ 권한 변경 승인 워크플로우
+- ☐ 권한 감사(Audit Log)
 
 ### 4. 조직 관리
-- **부서 관리**: 조직도 생성 및 관리
-- **팀 구성**: 프로젝트/기능별 팀 구성 관리
-- **보고 체계**: 상하관계 및 보고 체계 설정
-- **위임 관리**: 임시 권한 위임 및 대리 설정
-- **조직 변경**: 조직 개편 시 권한 자동 이전
+- ✅ 팀 멤버십(TeamMember) 모델 기초 정의 (Prisma 스키마)
+- ☐ 부서/팀 CRUD API 및 UI
+- ☐ 보고 체계 및 위임 관리
+- ☐ 조직 개편 자동화 규칙
 
 ### 5. 외부 통합
-- **SSO 통합**: SAML, OAuth 2.0, OpenID Connect
-- **LDAP/AD**: Active Directory 통합
-- **HR 시스템**: 인사 시스템과 연동
-- **외부 ID**: Google, Microsoft, GitHub 등 소셜 로그인
-- **API 인증**: 서비스 간 API 인증 관리
+- ☐ 이메일 발송 인프라 (회원가입 확인, 비밀번호 재설정)
+- ☐ HR/IdP 연동 (LDAP/AD, Okta 등)
+- ☐ API Key/Service-to-Service 인증
 
 ## 기술 스택
 
-### Backend
-- **Framework**: Node.js + Fastify 또는 NestJS
-- **Database**: PostgreSQL (사용자 데이터) + Redis (세션/캐시)
-- **Authentication**: Passport.js + JWT
-- **Authorization**: CASL 또는 Casbin
-- **Crypto**: bcrypt, crypto-js, node-forge
-- **Validation**: Joi 또는 Zod
+### Backend (현행)
+- **Framework**: NestJS 10 (Express Adapter)
+- **Language**: TypeScript
+- **Authentication**: `@nestjs/passport`, `@nestjs/jwt`
+- **ORM**: Prisma Client (`prisma/generated/prisma`)
+- **Database**: PostgreSQL 15 (Docker Compose, 포트 5433)
+- **Validation**: `class-validator`, `class-transformer`
+- **Hashing**: `bcrypt`
 
-### Security
-- **SSL/TLS**: Let's Encrypt 인증서 자동 갱신
-- **Rate Limiting**: express-rate-limit
-- **CSRF Protection**: csurf 또는 Double Submit Cookie
-- **Helmet**: 보안 헤더 설정
-- **Audit Logging**: Winston + ELK Stack
+### Backend (예정 확장)
+- Refresh Token 저장소 (Redis)
+- OAuth2 Provider 연동
+- Advanced RBAC (Casbin/CASL 등)
+- Audit Logging (Winston + ELK)
 
-### Infrastructure
-- **Container**: Docker + Kubernetes
-- **Secret Management**: HashiCorp Vault 또는 AWS Secrets Manager
-- **Monitoring**: Prometheus + Grafana
-- **WAF**: Cloudflare 또는 AWS WAF
-- **Backup**: 자동 데이터베이스 백업 및 복구
+### Infrastructure 현황
+- Docker Compose 기반 로컬 개발 환경 (`docker-compose.yml`)
+- `.env` 환경 변수 관리 (`backend/.env` → 12-Factor 원칙 준수)
+- Kubernetes/CI/CD/모니터링은 추후 구축 예정
 
-### External Services
-- **Email**: SendGrid, AWS SES
-- **SMS**: Twilio, AWS SNS
-- **Identity Providers**: Okta, Auth0, Azure AD
-- **Monitoring**: DataDog, New Relic
+## 데이터 모델 (Prisma `schema.prisma` 발췌)
+```prisma
+model User {
+  id          String         @id @default(uuid())
+  email       String         @unique
+  password    String
+  name        String
+  role        Role           @default(USER)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  profile     Profile?
+  teamMembers TeamMember[]
+  documents   Document[]
+  activities  UserActivity[]
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  avatar     String?
+  bio        String?
+  department String?
+  position   String?
+  phone      String?
+  timezone   String   @default("UTC")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id       String  @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  team     Team     @relation(fields: [teamId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  @@unique([teamId, userId])
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+```
+
+> 전체 스키마는 `backend/prisma/schema.prisma`에서 확인 가능합니다. WorkLog, Team, Document 등 다른 도메인 모델도 함께 정의되어 있습니다.
+
+## 구현된 API (NestJS `AuthController`)
+```http
+POST   /auth/register   # 회원가입 (이메일, 비밀번호, 이름, 부서/직무 옵션)
+POST   /auth/login      # 로그인 (JWT Access Token 발급)
+GET    /auth/me         # JWT 기반 사용자 정보 조회 (보호된 라우트)
+POST   /auth/refresh    # (미구현) Access Token 재발급 예정
+```
+
+### 요청/응답 예시
+```jsonc
+// POST /auth/register Request Body
+{
+  "email": "admin@nexus-stream.com",
+  "password": "admin123456",
+  "name": "Admin User",
+  "department": "IT",
+  "position": "System Administrator"
+}
+
+// Response
+{
+  "user": {
+    "id": "...",
+    "email": "admin@nexus-stream.com",
+    "name": "Admin User",
+    "role": "USER",
+    "active": true,
+    "createdAt": "2025-09-25T15:25:41.040Z",
+    "updatedAt": "2025-09-25T15:25:41.040Z",
+    "profile": {
+      "department": "IT",
+      "position": "System Administrator",
+      "timezone": "UTC"
+    }
+  },
+  "accessToken": "<JWT>"
+}
+```
+
+## 테스트 전략
+- 단위 테스트: `AuthService` 비밀번호 해싱/검증, 중복 이메일 검사
+- 통합 테스트: `/auth/register`, `/auth/login`, `/auth/me`
+- 보안 테스트: JWT 만료, 비활성 사용자 로그인 시나리오, 비밀번호 정책
+- 향후: Refresh Token 재사용 감지, MFA 코드 검증, 감사 로그 유효성
+
+## 로드맵 (요약)
+1. **Sprint 1-2**: JWT 인증, Prisma 스키마, 기본 유저 CRUD *(완료)*
+2. **Sprint 3-4**: Refresh Token, 비밀번호 재설정, 이메일 발송 *(예정)*
+3. **Sprint 5-6**: RBAC, 역할 관리 UI, 권한 감사 *(예정)*
+4. **Sprint 7-8**: OAuth/SSO, MFA, 디바이스 관리 *(예정)*
+
+## 참고 파일
+- `backend/src/auth/` - 서비스, 컨트롤러, DTO, JWT 전략
+- `backend/src/prisma/prisma.service.ts` - Prisma 연결 관리
+- `backend/prisma/migrations/` - 데이터베이스 마이그레이션 내역
+- `src/services/auth/authService.ts` - 프론트엔드 인증 클라이언트 로직
 
 ## 데이터 모델
 

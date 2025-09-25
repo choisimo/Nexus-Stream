@@ -17,10 +17,10 @@ Corporate Nexus Stream은 조직의 암묵지를 형식지로 변환하고 AI �
 | 구분 | 상태 | 완성도 |
 |------|------|--------|
 | Frontend UI | ⚠️ 부분 구현 | 30% |
-| Backend Services | ❌ 미구현 | 0% |
-| Database | ❌ 미구축 | 0% |
-| Infrastructure | ❌ 미구성 | 0% |
-| **전체 진행률** | 🔴 **개발 초기** | **5%** |
+| Backend Services | ⚠️ 부분 구현 (Auth, Knowledge Base) | 20% |
+| Database | ✅ PostgreSQL + Prisma 마이그레이션 | 40% |
+| Infrastructure | ⚠️ 부분 구성 (Docker Compose, 로컬 개발) | 25% |
+| **전체 진행률** | 🟠 **초기 MVP 구축 중** | **15%** |
 
 > ⚠️ **중요**: 현재 프로덕션 배포 불가 상태. 상세 내용은 [배포 준비 문서](/docs/tasks/00-production-deployment-tasks.md) 참조
 
@@ -34,54 +34,84 @@ Corporate Nexus Stream은 조직의 암묵지를 형식지로 변환하고 AI �
 - **State Management**: Zustand (예정)
 - **Data Fetching**: TanStack Query (예정)
 
-### Backend (구현 예정)
-- **Runtime**: Node.js + NestJS
+### Backend (현재 구현)
+- **Runtime**: Node.js 22 + NestJS
 - **Language**: TypeScript
-- **API**: REST + GraphQL + WebSocket
-- **Databases**: 
-  - PostgreSQL (primary)
-  - Redis (cache/sessions)
-  - Elasticsearch (search)
-  - Neo4j (knowledge graph)
+- **API**: REST (Auth, Documents)
+- **ORM**: Prisma Client (PostgreSQL)
+- **Security**: JWT + bcrypt
+- **Configuration**: `@nestjs/config`, 환경 변수 기반 설정
 
-### Infrastructure (구현 예정)
-- **Containerization**: Docker + Docker Compose
-- **Orchestration**: Kubernetes
-- **CI/CD**: GitHub Actions + ArgoCD
-- **Monitoring**: Prometheus + Grafana + ELK Stack
+### Backend (향후 확장 예정)
+- GraphQL Gateway
+- WebSocket 기반 실시간 협업
+- Redis 기반 캐시/세션
+- Elasticsearch 연동(검색)
+- Neo4j 기반 지식 그래프
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose (로컬 Postgres/Redis 지원)
+- **Orchestration**: Kubernetes (예정)
+- **CI/CD**: GitHub Actions (예정)
+- **Monitoring**: Prometheus + Grafana + ELK Stack (예정)
 
 ## 🚀 빠른 시작
 
 ### 필수 요구사항
 - Node.js 18+ & npm 9+
-- Docker Desktop (백엔드 개발 시)
+- Docker (또는 Podman) - PostgreSQL 컨테이너 실행용
 - Git
+- OpenSSL (JWT 시크릿 생성 시)
 
-### 개발 환경 설정
+### 개발 환경 설정 (단일 머신 로컬)
 
 ```bash
 # 1. 저장소 클론
 git clone https://github.com/your-org/corporate-nexus-stream.git
 cd corporate-nexus-stream
 
-# 2. 의존성 설치
+# 2. 프론트엔드 의존성 설치
 npm install
 
 # 3. 환경 변수 설정
 cp .env.example .env.local
 
-# 4. 개발 서버 실행
+# 4. 프론트엔드 개발 서버 실행 (Vite)
 npm run dev
 
 # 5. 브라우저에서 확인
-# http://localhost:5173
+# http://localhost:8080
 ```
 
-### Docker를 이용한 전체 스택 실행 (준비 중)
+### 백엔드 & 데이터베이스 실행
 
 ```bash
-# Docker Compose로 전체 서비스 실행
-docker-compose up -d
+# 1. 백엔드 의존성 설치
+cd backend
+npm install
+
+# 2. 환경 변수 준비
+cp .env .env.local # 필요시 수정
+
+# 3. 데이터베이스 기동 (프로젝트 루트에서)
+docker-compose up -d postgres
+
+# 4. Prisma 마이그레이션 및 시드 (선택)
+cd backend
+npx prisma migrate dev --name init
+
+# 5. NestJS 개발 서버 실행
+npm run start:dev
+
+# API 확인
+# http://localhost:3000/auth/health (추가 예정)
+```
+
+### Docker를 이용한 전체 스택 실행 (부분 지원)
+
+```bash
+# Postgres + Redis (선택) 실행
+docker-compose up -d postgres redis
 
 # 서비스 상태 확인
 docker-compose ps
@@ -100,10 +130,14 @@ corporate-nexus-stream/
 │   ├── hooks/             # Custom React Hooks
 │   ├── lib/               # 유틸리티 함수
 │   └── assets/            # 정적 리소스
-├── backend/               # Backend 서비스 (구현 예정)
-│   ├── services/          # 마이크로서비스
-│   ├── shared/            # 공통 라이브러리
-│   └── docs/              # PRD 문서
+├── backend/               # NestJS 백엔드 서비스
+│   ├── src/
+│   │   ├── auth/          # 인증 모듈 (JWT, register/login)
+│   │   ├── documents/     # 지식베이스 문서 모듈
+│   │   ├── prisma/        # PrismaService 및 DB 모듈
+│   │   └── app.module.ts  # 루트 모듈 구성
+│   ├── prisma/            # Prisma schema 및 마이그레이션
+│   └── docs/              # 백엔드 서비스 PRD
 ├── docs/                  # 프로젝트 문서
 │   ├── tasks/             # 개발 태스크 문서
 │   └── *.md               # 서비스별 PRD
@@ -128,14 +162,14 @@ corporate-nexus-stream/
 ### Phase 0: Foundation (현재)
 - [x] 프로젝트 초기 설정
 - [x] PRD 문서 작성
-- [ ] 백엔드 인프라 구축
-- [ ] 데이터베이스 설계
+- [x] 백엔드 인프라 초기 구축 (NestJS + Prisma)
+- [x] 데이터베이스 설계 및 마이그레이션 (User, Document 도메인)
 
 ### Phase 1: Core Services (4주)
-- [ ] 사용자 인증 시스템
-- [ ] 지식베이스 CRUD
-- [ ] 기본 검색 기능
-- [ ] 프론트엔드 통합
+- [x] 사용자 인증 시스템 (JWT, Register/Login, Profile)
+- [x] 지식베이스 CRUD (문서, 버전 기록, 태그)
+- [ ] 기본 검색 기능 (Elasticsearch 통합 예정)
+- [ ] 프론트엔드 통합 고도화 (React + Zustand + Query)
 
 ### Phase 2: Collaboration (4주)
 - [ ] 실시간 메시징
@@ -183,7 +217,10 @@ docker build -t corporate-nexus-stream .
 - [개발 계획서](/docs/00-master-development-plan.md)
 - [프로덕션 배포 태스크](/docs/tasks/00-production-deployment-tasks.md)
 - [실행 요약](/docs/tasks/00-EXECUTIVE-SUMMARY.md)
-- [API 문서](http://localhost:3000/api-docs) (백엔드 실행 시)
+- [인증 서비스 현황](/docs/05-user-management-auth-service.md)
+- [지식베이스 서비스 현황](/docs/01-knowledge-base-service.md)
+
+> Swagger/OpenAPI 문서는 추후 `@nestjs/swagger` 도입 시 제공 예정입니다.
 
 ## 🤝 기여 가이드
 
@@ -205,4 +242,4 @@ This project is proprietary and confidential.
 
 ---
 
-⚡ **Status**: Active Development | 🔄 **Last Updated**: 2025-09-25
+⚡ **Status**: Active Development (Backend MVP 가동) | 🔄 **Last Updated**: 2025-09-26
